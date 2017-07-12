@@ -29,7 +29,8 @@ class TextRank:
 
         self.sentence_nx_graph = nx.from_scipy_sparse_matrix(sentence_similarity_matrix)
         self.word_nx_graph = nx.from_scipy_sparse_matrix(word_similarity_matrix)
-
+        self.__sentence_pagerank = None
+        self.__word_pagerank = None
 
     def get_sentence(self, index):
         return self.sentences[index]
@@ -50,11 +51,13 @@ class TextRank:
 
 
     def key_sentences(self, topn=None):
-        scores = nx.pagerank(self.sentence_nx_graph)
-        return sorted(((scores[i], s) for i, s in enumerate(self.sentences)),
+        if not self.__sentence_pagerank:
+            self.__sentence_pagerank = nx.pagerank(self.sentence_nx_graph)
+        return sorted(((self.__sentence_pagerank[i], s) for i, s in enumerate(self.sentences)),
                       reverse=True)[:topn]
 
     def keywords(self, topn=None):
-        scores = nx.pagerank(self.word_nx_graph)
-        return sorted(((scores[i], s) for i, s in enumerate(self.tfidf_features)),
+        if not self.__word_pagerank:
+            self.__word_pagerank = nx.pagerank(self.word_nx_graph)
+        return sorted(((self.__word_pagerank[i], s) for i, s in enumerate(self.tfidf_features)),
                       reverse=True)[:topn]

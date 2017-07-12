@@ -33,9 +33,14 @@ MATCH (w1:Word)-[r:NEXT]->(w2:Word)
 RETURN [w1.string, w2.string] AS word_pair, r.count AS count
 ORDER BY count DESC LIMIT 5
 
-// shortest path
+// shortest path, any direction
 MATCH (w1:Word {string: "holmes"}), (w2:Word {string: "emotion"}),
       path = allShortestPaths((w1)-[:NEXT*]-(w2))
+RETURN path
+
+// unidirectional
+MATCH (w1:Word {string: "holmes"}), (w2:Word {string: "emotion"}),
+      path = allShortestPaths((w1)-[:NEXT*]->(w2))
 RETURN path
 
 
@@ -49,9 +54,14 @@ MATCH (s:Word {word: "holmes"})
 MATCH (w:Word)<-[:NEXT_WORD]-(s)
 RETURN w.word as word
 
-// shortest path
+// shortest path, any direction
 MATCH (w1:Word {word: "holmes"}), (w2:Word {word: "adler"}),
       path = allShortestPaths((w1)-[:NEXT_WORD*]-(w2))
+RETURN path
+
+// unidirectional
+MATCH (w1:Word {word: "holmes"}), (w2:Word {word: "adler"}),
+      path = allShortestPaths((w1)-[:NEXT_WORD*]->(w2))
 RETURN path
 
 
@@ -70,7 +80,7 @@ WITH left1, right1, s, o
 MATCH (w:Word)-[:NEXT_WORD]->(o)
 WITH collect(DISTINCT w.word) as left1_o, s, o, right1, left1
 MATCH (w:Word)<-[:NEXT_WORD]-(o)
-WITH left1_o, s, o, right1, left1, collect(DISTINCT w.word) as right1_o
+WITH left1_o, s, o, right1, left1, collect(DISTINCT w.word) AS right1_o
 // compute right1 union, intersect
 WITH FILTER(x IN right1 WHERE x IN right1_o) as r1_intersect,
   (right1 + right1_o) AS r1_union, s, o, right1, left1, right1_o, left1_o
@@ -81,11 +91,11 @@ WITH DISTINCT r1_union as r1_union, l1_union as l1_union, r1_intersect, l1_inter
 WITH 1.0*length(r1_intersect) / length(r1_union) as r1_jaccard,
   1.0*length(l1_intersect) / length(l1_union) as l1_jaccard,
   s, o
-WITH s, o, r1_jaccard, l1_jaccard, r1_jaccard + l1_jaccard as sim
+WITH s, o, r1_jaccard, l1_jaccard, r1_jaccard + l1_jaccard AS sim
 CREATE UNIQUE (s)-[r:RELATED_TO]->(o) SET r.paradig = sim;
 
 // Find words related to input word
-MATCH (s:Word {word: 'bohemia'} )-[r:RELATED_TO]->(o) RETURN s.word,o.word,r.paradig as sim ORDER BY sim DESC LIMIT 25
+MATCH (s:Word {word: 'bohemia'} )-[r:RELATED_TO]->(o) RETURN s.word,o.word,r.paradig AS sim ORDER BY sim DESC LIMIT 25
 
 // Top 100 related words
 MATCH (s)-[r:RELATED_TO]->(o) RETURN s.word,o.word,r.paradig AS sim ORDER BY sim DESC LIMIT 100;
